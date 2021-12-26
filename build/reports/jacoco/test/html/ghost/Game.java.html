@@ -1,0 +1,298 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Game.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">a2</a> &gt; <a href="index.source.html" class="el_package">ghost</a> &gt; <span class="el_source">Game.java</span></div><h1>Game.java</h1><pre class="source lang-java linenums">package ghost;
+
+import java.lang.Math;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Random;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
+
+public class Game {
+  private Player player;
+  private Grid grid;
+  private int speed;
+  private int playerLives;
+  private int livesLeft;
+<span class="fc" id="L21">  private List&lt;Ghost&gt; ghosts = new ArrayList&lt;Ghost&gt;();</span>
+<span class="fc" id="L22">  private List&lt;Integer&gt; modeLengths = new ArrayList&lt;Integer&gt;();</span>
+  private int frightenedLength;
+  // Variables for keeping track of ghost modes
+  private GhostMode ghostMode;
+  private double cycleTime;  // SCATTER/CHASE cycle time
+  private double frightenedTime;
+<span class="fc" id="L28">  private Random random = new Random();</span>
+
+  public Player player() {
+<span class="fc" id="L31">    return player;</span>
+  }
+  public List&lt;Ghost&gt; ghosts() {
+<span class="fc" id="L34">    return ghosts;</span>
+  }
+  public Grid grid() {
+<span class="fc" id="L37">    return grid;</span>
+  }
+
+  public int livesLeft() {
+<span class="fc" id="L41">    return livesLeft;</span>
+  }
+  public int speed() {
+<span class="fc" id="L44">    return speed;</span>
+  }
+
+  public GameMode mode() {
+<span class="fc bfc" id="L48" title="All 2 branches covered.">    if (grid.fruitLeft() == 0) {</span>
+<span class="fc" id="L49">      return GameMode.WIN;</span>
+<span class="fc bfc" id="L50" title="All 2 branches covered.">    } else if (livesLeft == 0) {</span>
+<span class="fc" id="L51">      return GameMode.LOSE;</span>
+    } else {
+<span class="fc" id="L53">      return GameMode.RUNNING;</span>
+    }
+  }
+
+  private void eatFruit(int col, int row) {
+<span class="fc" id="L58">    grid.eatFruit(col, row);</span>
+<span class="fc" id="L59">    System.out.println(grid.fruitLeft());</span>
+<span class="fc" id="L60">  }</span>
+  private void ghostModeChanged() {
+<span class="fc bfc" id="L62" title="All 2 branches covered.">    for (Ghost ghost : ghosts) {</span>
+<span class="fc" id="L63">      ghost.setMode(ghostMode);</span>
+<span class="fc" id="L64">    }</span>
+<span class="fc" id="L65">  }</span>
+  private void sendHome() {
+<span class="fc" id="L67">    player.goHome();</span>
+<span class="fc bfc" id="L68" title="All 2 branches covered.">    for (Ghost ghost : ghosts) {</span>
+<span class="fc" id="L69">      ghost.goHome();</span>
+<span class="fc" id="L70">    }</span>
+    // Reset the ghost mode Variables
+<span class="fc" id="L72">    ghostMode = GhostMode.SCATTER;</span>
+<span class="fc" id="L73">    cycleTime = 0;</span>
+<span class="fc" id="L74">    frightenedTime = 0;</span>
+<span class="fc" id="L75">    ghostModeChanged();</span>
+<span class="fc" id="L76">  }</span>
+  public void reset() {
+<span class="fc" id="L78">    sendHome();</span>
+<span class="fc" id="L79">    livesLeft = playerLives;</span>
+<span class="fc" id="L80">    grid.resetFruit();</span>
+<span class="fc" id="L81">  }</span>
+  private void adjustGhostMode(double timePassed) {
+<span class="fc bfc" id="L83" title="All 2 branches covered.">    if (ghostMode == GhostMode.FRIGHTENED) {</span>
+<span class="fc" id="L84">      frightenedTime += timePassed;</span>
+<span class="pc bpc" id="L85" title="1 of 2 branches missed.">      if (frightenedTime &lt; frightenedLength) {</span>
+<span class="fc" id="L86">        return; // stay in frightened mode</span>
+      }
+<span class="nc" id="L88">      timePassed = 0;</span>
+    }
+<span class="fc" id="L90">    cycleTime += timePassed;</span>
+<span class="fc" id="L91">    int subtotal = 0;</span>
+<span class="fc bfc" id="L92" title="All 2 branches covered.">    for (int i = 0; i &lt; modeLengths.size(); i++) {</span>
+<span class="fc" id="L93">      subtotal += modeLengths.get(i);</span>
+<span class="fc bfc" id="L94" title="All 2 branches covered.">      if (cycleTime &lt; subtotal) {</span>
+<span class="fc bfc" id="L95" title="All 2 branches covered.">        if (i%2 == 0) {</span>
+<span class="fc" id="L96">          ghostMode = GhostMode.SCATTER;</span>
+        } else {
+<span class="fc" id="L98">          ghostMode = GhostMode.CHASE;</span>
+        }
+<span class="fc" id="L100">        return;</span>
+      }
+    }
+<span class="fc" id="L103">    cycleTime -= subtotal;</span>
+<span class="fc" id="L104">    ghostMode = GhostMode.SCATTER;</span>
+<span class="fc" id="L105">  }</span>
+  public void move(double gridUnits, double timePassed) {
+<span class="fc" id="L107">    movePlayer(gridUnits);</span>
+<span class="fc bfc" id="L108" title="All 2 branches covered.">    for (Ghost ghost : ghosts) {</span>
+<span class="fc" id="L109">      moveGhost(ghost, gridUnits);</span>
+<span class="fc" id="L110">    }</span>
+<span class="fc" id="L111">    GhostMode oldMode = ghostMode;</span>
+<span class="fc" id="L112">    adjustGhostMode(timePassed);</span>
+<span class="fc bfc" id="L113" title="All 2 branches covered.">    if (oldMode != ghostMode) {</span>
+<span class="fc" id="L114">      ghostModeChanged();</span>
+    }
+<span class="fc" id="L116">  }</span>
+  private void movePlayer(double gridUnits) {
+    // System.out.print(gridUnits);
+<span class="fc" id="L119">    GridCoord playerCell = new GridCoord(player.curPos());</span>
+
+<span class="pc bpc" id="L121" title="1 of 2 branches missed.">    if (player.nextDir() != null) {</span>
+<span class="pc bpc" id="L122" title="1 of 2 branches missed.">      if (player.curDir().opposite() == player.nextDir()) {</span>
+        //  Immediately reverse direction.
+<span class="nc" id="L124">        player.setCurDir(player.nextDir());</span>
+      }
+    }
+<span class="fc" id="L127">    double dispToCentre = playerCell.displacementTo(player.curPos(), player.curDir());</span>
+<span class="pc bpc" id="L128" title="2 of 6 branches missed.">    if (dispToCentre &gt;= 0 &amp;&amp; player.nextDir() != null &amp;&amp; player.nextDir() != player.curDir()) {</span>
+      // Human player wants to turn at the next intersection,
+      // and Waka hasn't passed the centre of the current cell.
+      // Check to see whether we can turn.
+      //turnCell = cell at current player coords + xD &amp; yD from setNextDir
+<span class="nc" id="L133">      GridCoord turnCell = new GridCoord(playerCell.x + player.nextDir().xD(), playerCell.y + player.nextDir().yD());</span>
+<span class="nc bnc" id="L134" title="All 2 branches missed.">      if (!grid.cellAt(turnCell.x, turnCell.y).isWall()) {</span>
+<span class="nc bnc" id="L135" title="All 2 branches missed.">        if (gridUnits &gt; dispToCentre) {</span>
+          // Move Waka centre of current cell, adjust remaining distance, and turnCell
+<span class="nc" id="L137">          player.move(dispToCentre);</span>
+<span class="nc" id="L138">          gridUnits -= dispToCentre;</span>
+<span class="nc" id="L139">          dispToCentre = 0;</span>
+<span class="nc" id="L140">          player.setCurDir(player.nextDir());</span>
+        }
+      }
+    }
+<span class="fc" id="L144">    GridCoord nextCell = new GridCoord(playerCell.x + player.curDir().xD(), playerCell.y + player.curDir().yD());</span>
+    // Wall detection
+<span class="fc bfc" id="L146" title="All 2 branches covered.">    if (grid.cellAt(nextCell.x, nextCell.y).isWall()) {</span>
+<span class="pc bpc" id="L147" title="1 of 2 branches missed.">      if (dispToCentre &gt;= 0) {</span>
+        //  The centre is ahead of us.  Keep moving, but not too much.
+<span class="pc bpc" id="L149" title="1 of 2 branches missed.">        if (gridUnits &gt; dispToCentre) {</span>
+<span class="nc" id="L150">          gridUnits -= dispToCentre;</span>
+        }
+<span class="fc" id="L152">        player.move(dispToCentre);</span>
+      } else {
+        // We've gone past the centre!  Move back to dispToCentre
+<span class="nc" id="L155">        player.setPos(new MoverCoord(playerCell));</span>
+      }
+    } else {
+<span class="fc" id="L158">      player.move(gridUnits);</span>
+    }
+
+<span class="fc" id="L161">    Cell celltype = grid.cellAt(playerCell.x, playerCell.y);</span>
+<span class="fc bfc" id="L162" title="All 4 branches covered.">    if (celltype == Cell.FRUIT || celltype == Cell.SUPERFRUIT) {</span>
+<span class="fc" id="L163">      eatFruit(playerCell.x, playerCell.y);</span>
+<span class="fc bfc" id="L164" title="All 2 branches covered.">      if (celltype == Cell.SUPERFRUIT) {</span>
+<span class="fc" id="L165">        frightenedTime = 0;</span>
+<span class="fc" id="L166">        ghostMode = GhostMode.FRIGHTENED;</span>
+<span class="fc" id="L167">        ghostModeChanged();</span>
+      }
+    }
+<span class="fc" id="L170">  }</span>
+
+  private void moveGhost(Ghost ghost, double gridUnits) {
+<span class="fc bfc" id="L173" title="All 2 branches covered.">    if (ghost.removed()) {</span>
+<span class="fc" id="L174">      return;</span>
+    }
+    // System.out.print(gridUnits);
+<span class="fc" id="L177">    GridCoord ghostCell = new GridCoord(ghost.curPos());</span>
+
+<span class="fc" id="L179">    double dispToCentre = ghostCell.displacementTo(ghost.curPos(), ghost.curDir());</span>
+<span class="fc bfc" id="L180" title="All 4 branches covered.">    if (dispToCentre &gt;= 0 &amp;&amp; gridUnits &gt; dispToCentre) {</span>
+      // Ghost is near centre of the cell.
+      // Move ghost to center of the cell, adjust remaining
+      // distance and see whether the ghost can turn
+<span class="fc" id="L184">      ghost.move(dispToCentre);</span>
+<span class="fc" id="L185">      gridUnits -= dispToCentre;</span>
+<span class="fc" id="L186">      dispToCentre = 0;</span>
+
+      // Find closest adjacent cell to the ghost target
+      //
+<span class="fc" id="L190">      GridCoord target = ghost.targetCoord();</span>
+<span class="fc" id="L191">      GridCoord closestCell = null;</span>
+<span class="fc" id="L192">      double closestDistance = -1;</span>
+<span class="fc" id="L193">      Dir closestDir = null;</span>
+<span class="fc" id="L194">      List&lt;Dir&gt; turnDirections = new ArrayList&lt;Dir&gt;();</span>
+<span class="fc bfc" id="L195" title="All 2 branches covered.">      for (Dir d : Dir.values()) {</span>
+<span class="fc bfc" id="L196" title="All 2 branches covered.">        if (!(d.opposite() == ghost.curDir())) {</span>
+<span class="fc" id="L197">          GridCoord turnCell = new GridCoord(ghostCell.x + d.xD(), ghostCell.y + d.yD());</span>
+<span class="fc bfc" id="L198" title="All 2 branches covered.">          if (!grid.cellAt(turnCell.x, turnCell.y).isWall()) {</span>
+<span class="fc" id="L199">            turnDirections.add(d);</span>
+<span class="fc" id="L200">            double turnDistance = turnCell.distanceTo(target);</span>
+<span class="fc bfc" id="L201" title="All 4 branches covered.">            if (closestCell == null || turnDistance &lt; closestDistance) {</span>
+<span class="fc" id="L202">              closestCell = turnCell;</span>
+<span class="fc" id="L203">              closestDistance = turnDistance;</span>
+<span class="fc" id="L204">              closestDir = d;</span>
+            }
+          }
+        }
+      }
+<span class="fc bfc" id="L209" title="All 2 branches covered.">      if (closestCell == null) {</span>
+        // Dead end - reverse direction
+<span class="fc" id="L211">        ghost.setCurDir(ghost.curDir().opposite());</span>
+      } else {
+<span class="fc bfc" id="L213" title="All 2 branches covered.">        if (ghostMode == GhostMode.FRIGHTENED) {</span>
+<span class="fc" id="L214">          int randomDirIndex = random.nextInt(turnDirections.size());</span>
+<span class="fc" id="L215">          ghost.setCurDir(turnDirections.get(randomDirIndex));</span>
+<span class="fc" id="L216">        } else {</span>
+<span class="fc" id="L217">          ghost.setCurDir(closestDir);</span>
+        }
+      }
+    }
+    //ghost.move(gridUnits);
+
+<span class="fc" id="L223">    GridCoord newGhostCell = new GridCoord(ghost.curPos());</span>
+<span class="fc" id="L224">    GridCoord playerPos = new GridCoord(player.curPos());</span>
+<span class="pc bpc" id="L225" title="1 of 4 branches missed.">    boolean collided = newGhostCell.distanceTo(playerPos) == 0 || ghostCell.distanceTo(playerPos) == 0;</span>
+<span class="pc bpc" id="L226" title="1 of 4 branches missed.">    if (collided &amp;&amp; livesLeft &gt;= 1) {</span>
+<span class="fc bfc" id="L227" title="All 2 branches covered.">      if (ghostMode == GhostMode.FRIGHTENED) {</span>
+<span class="fc" id="L228">        ghost.setRemoved();</span>
+<span class="fc" id="L229">        return;</span>
+      } else {
+<span class="fc" id="L231">        System.out.println(&quot;Dead&quot;);</span>
+<span class="fc" id="L232">        livesLeft--;</span>
+<span class="fc" id="L233">        sendHome();</span>
+<span class="pc bpc" id="L234" title="1 of 2 branches missed.">        if (livesLeft == 0) {</span>
+<span class="fc" id="L235">          System.out.println(&quot;Game over&quot;);</span>
+        }
+<span class="fc" id="L237">        return;</span>
+      }
+    }
+<span class="fc" id="L240">    ghost.move(gridUnits);</span>
+
+<span class="fc" id="L242">  }</span>
+
+<span class="fc" id="L244">  public Game(String configFilename) {</span>
+<span class="fc" id="L245">    JSONParser jsonParser = new JSONParser();</span>
+<span class="fc" id="L246">    try (BufferedReader reader = new BufferedReader(new FileReader(configFilename))) {</span>
+<span class="fc" id="L247">      JSONObject conf = (JSONObject) jsonParser.parse(reader);</span>
+<span class="fc" id="L248">      String mapFilename = (String) conf.get(&quot;map&quot;);</span>
+<span class="fc" id="L249">      playerLives = ((Number) conf.get(&quot;lives&quot;)).intValue();</span>
+<span class="fc" id="L250">      livesLeft = playerLives;</span>
+<span class="fc" id="L251">      speed = ((Number) conf.get(&quot;speed&quot;)).intValue();</span>
+<span class="fc" id="L252">      JSONArray a = (JSONArray) conf.get(&quot;modeLengths&quot;);</span>
+<span class="fc bfc" id="L253" title="All 2 branches covered.">      for (Object obj : a) {</span>
+<span class="fc" id="L254">        int x = ((Number) obj).intValue();</span>
+<span class="fc" id="L255">        modeLengths.add(new Integer(x));</span>
+<span class="fc" id="L256">      }</span>
+<span class="fc" id="L257">      frightenedLength = ((Number) conf.get(&quot;frightenedLength&quot;)).intValue();</span>
+<span class="fc" id="L258">      grid = new Grid(mapFilename);</span>
+<span class="fc" id="L259">      player = new Player(grid.playerHome());</span>
+<span class="fc" id="L260">      Ghost chaser = null;</span>
+<span class="fc" id="L261">      List&lt;Whim&gt; whims = new ArrayList&lt;Whim&gt;();</span>
+<span class="fc bfc" id="L262" title="All 2 branches covered.">      for (MoverCoord m : grid.ghostInfo().keySet()) {</span>
+<span class="fc" id="L263">        Ghost ghost = null;</span>
+<span class="pc bpc" id="L264" title="1 of 5 branches missed.">        switch (grid.ghostInfo().get(m)) {</span>
+          case AMBUSHER:
+<span class="fc" id="L266">            ghost = new Ambusher(m, player);</span>
+<span class="fc" id="L267">            break;</span>
+          case CHASER:
+<span class="fc" id="L269">            chaser = new Chaser(m, player);</span>
+<span class="fc" id="L270">            ghost = chaser;</span>
+<span class="fc" id="L271">            break;</span>
+          case IGNORANT:
+<span class="fc" id="L273">            ghost = new Ignorant(m, player);</span>
+<span class="fc" id="L274">            break;</span>
+          case WHIM:
+<span class="fc" id="L276">            Whim whim = new Whim(m, player);</span>
+<span class="fc" id="L277">            whims.add(whim);</span>
+<span class="fc" id="L278">            ghost = whim;</span>
+            break;
+        }
+<span class="fc" id="L281">        ghosts.add(ghost);</span>
+        //System.out.println(ghost.type + &quot; &quot; + ghost.curPos());
+<span class="fc" id="L283">      }</span>
+<span class="fc bfc" id="L284" title="All 2 branches covered.">      for (Whim whim : whims) {</span>
+<span class="fc" id="L285">        whim.setChaser(chaser);</span>
+<span class="fc" id="L286">      }</span>
+      // for each ghost home and ghost type in the grid,
+      // create a ghost of the appropriate class
+    }
+<span class="nc" id="L290">    catch (IOException e) {</span>
+<span class="nc" id="L291">      e.printStackTrace();</span>
+    }
+<span class="nc" id="L293">    catch (ParseException e) {</span>
+<span class="nc" id="L294">      e.printStackTrace();</span>
+<span class="pc" id="L295">    }</span>
+<span class="fc" id="L296">  }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

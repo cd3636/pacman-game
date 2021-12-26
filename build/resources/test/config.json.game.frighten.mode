@@ -1,0 +1,10 @@
+{
+    "map": "src/test/resources/map-game-frighten-mode.txt",
+    "lives": 1,
+    "speed": 1,
+    "frightenedLength": 10,
+    "modeLengths": [
+        1,
+        1
+    ]
+}

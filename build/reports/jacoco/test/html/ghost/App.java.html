@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>App.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">a2</a> &gt; <a href="index.source.html" class="el_package">ghost</a> &gt; <span class="el_source">App.java</span></div><h1>App.java</h1><pre class="source lang-java linenums">package ghost;
+
+import processing.core.PApplet;
+import processing.core.PImage;
+import processing.core.PFont;
+import processing.event.KeyEvent;
+import java.util.Map;
+import java.util.HashMap;
+
+public class App extends PApplet {
+
+  public static final int WIDTH = 448;
+  public static final int HEIGHT = 576;
+  public static final int SPRITE_SIZE = 16;
+  public static final int FRAME_RATE = 60;
+  public static final double SECS_PER_FRAME = 1.0 / FRAME_RATE;
+
+  private Grid grid;
+  private Game game;
+  private Player player;
+<span class="fc" id="L21">  private Map&lt;Cell,PImage&gt; cellConvert = new HashMap&lt;Cell,PImage&gt;();</span>
+<span class="fc" id="L22">  private Map&lt;Dir,PImage&gt; playerConvert = new HashMap&lt;Dir,PImage&gt;();</span>
+<span class="fc" id="L23">  private Map&lt;GhostType,PImage&gt; ghostConvert = new HashMap&lt;GhostType,PImage&gt;();</span>
+  private PImage frightened;
+  private PFont font;
+<span class="fc" id="L26">  private boolean mouthOpen = false;</span>
+<span class="fc" id="L27">  private boolean debugMode = false;</span>
+<span class="fc" id="L28">  private int splashTimer = 0;</span>
+
+<span class="fc" id="L30">  public App() {</span>
+    //Set up your objects
+<span class="fc" id="L32">    game = new Game(&quot;config.json&quot;);</span>
+<span class="fc" id="L33">    grid = game.grid();</span>
+<span class="fc" id="L34">    player = game.player();</span>
+<span class="fc" id="L35">  }</span>
+
+  public void setup() {
+<span class="nc" id="L38">    frameRate(FRAME_RATE);</span>
+
+    // Load images
+<span class="nc" id="L41">    cellConvert.put(Cell.WALLHORIZONTAL, loadImage(&quot;horizontal.png&quot;));</span>
+<span class="nc" id="L42">    cellConvert.put(Cell.WALLVERTICAL, loadImage(&quot;vertical.png&quot;));</span>
+<span class="nc" id="L43">    cellConvert.put(Cell.WALLUPLEFT, loadImage(&quot;upLeft.png&quot;));</span>
+<span class="nc" id="L44">    cellConvert.put(Cell.WALLUPRIGHT, loadImage(&quot;upRight.png&quot;));</span>
+<span class="nc" id="L45">    cellConvert.put(Cell.WALLDOWNLEFT, loadImage(&quot;downLeft.png&quot;));</span>
+<span class="nc" id="L46">    cellConvert.put(Cell.WALLDOWNRIGHT, loadImage(&quot;downRight.png&quot;));</span>
+<span class="nc" id="L47">    cellConvert.put(Cell.FRUIT, loadImage(&quot;fruit.png&quot;));</span>
+
+<span class="nc" id="L49">    playerConvert.put(Dir.UP, loadImage(&quot;playerUp.png&quot;));</span>
+<span class="nc" id="L50">    playerConvert.put(Dir.DOWN, loadImage(&quot;playerDown.png&quot;));</span>
+<span class="nc" id="L51">    playerConvert.put(Dir.LEFT, loadImage(&quot;playerLeft.png&quot;));</span>
+<span class="nc" id="L52">    playerConvert.put(Dir.RIGHT, loadImage(&quot;playerRight.png&quot;));</span>
+<span class="nc" id="L53">    playerConvert.put(null, loadImage(&quot;playerClosed.png&quot;));</span>
+
+<span class="nc" id="L55">    ghostConvert.put(GhostType.AMBUSHER, loadImage(&quot;ambusher.png&quot;));</span>
+<span class="nc" id="L56">    ghostConvert.put(GhostType.CHASER, loadImage(&quot;chaser.png&quot;));</span>
+<span class="nc" id="L57">    ghostConvert.put(GhostType.IGNORANT, loadImage(&quot;ignorant.png&quot;));</span>
+<span class="nc" id="L58">    ghostConvert.put(GhostType.WHIM, loadImage(&quot;whim.png&quot;));</span>
+<span class="nc" id="L59">    frightened = loadImage(&quot;frightened.png&quot;);</span>
+
+<span class="nc" id="L61">    font = createFont(&quot;PressStart2P-Regular.ttf&quot;, 34, true);</span>
+
+    //ghostSprite = loadImage(&quot;ghost.png&quot;);
+<span class="nc" id="L64">  }</span>
+
+  public void settings() {
+<span class="nc" id="L67">    size(WIDTH, HEIGHT);</span>
+<span class="nc" id="L68">  }</span>
+
+  public int screenCoord(double gridUnit) {
+<span class="nc" id="L71">    return (int) (gridUnit * SPRITE_SIZE + SPRITE_SIZE/2);</span>
+  }
+
+  public void drawSprite(PImage sprite, double cellCol, double cellRow) {
+<span class="nc" id="L75">    image(sprite, screenCoord(cellCol), screenCoord(cellRow));</span>
+<span class="nc" id="L76">  }</span>
+
+  public void drawSpriteDoubleSize(PImage sprite, double cellCol, double cellRow) {
+<span class="nc" id="L79">    image(sprite, screenCoord(cellCol), screenCoord(cellRow), SPRITE_SIZE*2, SPRITE_SIZE*2);</span>
+//    image(sprite, (int) (cellCol * SPRITE_SIZE + SPRITE_SIZE/2), (int) (cellRow * SPRITE_SIZE + SPRITE_SIZE/2), sprite.width * 2, sprite.height*2);
+<span class="nc" id="L81">  }</span>
+
+  public void draw() {
+<span class="nc" id="L84">    background(0, 0, 0);</span>
+<span class="nc" id="L85">    imageMode(CENTER);</span>
+<span class="nc bnc" id="L86" title="All 2 branches missed.">    if (game.mode() != GameMode.RUNNING) {</span>
+<span class="nc bnc" id="L87" title="All 2 branches missed.">      String message = (game.mode() == GameMode.WIN) ? &quot;\n\n\n\n\n\n   YOU WIN&quot; : &quot;\n\n\n\n\n\n  GAME OVER&quot;;</span>
+<span class="nc" id="L88">      textFont(font);</span>
+<span class="nc" id="L89">      text(message, 0, 0);</span>
+<span class="nc" id="L90">      splashTimer++;</span>
+<span class="nc bnc" id="L91" title="All 2 branches missed.">      if (splashTimer == 600) {</span>
+<span class="nc" id="L92">        game.reset();</span>
+      }
+<span class="nc" id="L94">      return;</span>
+    }
+<span class="nc" id="L96">    splashTimer = 0;</span>
+<span class="nc bnc" id="L97" title="All 2 branches missed.">    if (frameCount%8 == 0) {</span>
+<span class="nc bnc" id="L98" title="All 2 branches missed.">      mouthOpen = !mouthOpen;</span>
+    }
+<span class="nc" id="L100">    game.move(((double) game.speed()) / SPRITE_SIZE, SECS_PER_FRAME);</span>
+<span class="nc bnc" id="L101" title="All 2 branches missed.">    for (int row = 0; row &lt; grid.GRID_ROWS; row++) {</span>
+<span class="nc bnc" id="L102" title="All 2 branches missed.">      for (int col = 0; col &lt; grid.GRID_COLS; col++) {</span>
+<span class="nc" id="L103">        Cell cell = grid.cellAt(col, row);</span>
+<span class="nc bnc" id="L104" title="All 2 branches missed.">        if (cell != Cell.AIR) {</span>
+<span class="nc bnc" id="L105" title="All 2 branches missed.">          if (cell == Cell.SUPERFRUIT) {</span>
+<span class="nc" id="L106">            PImage sprite = cellConvert.get(Cell.FRUIT);</span>
+<span class="nc" id="L107">            drawSpriteDoubleSize(sprite, col, row);</span>
+<span class="nc" id="L108">          } else {</span>
+<span class="nc" id="L109">            PImage sprite = cellConvert.get(cell);</span>
+<span class="nc" id="L110">            drawSprite(sprite, col, row);</span>
+          }
+            //System.out.println(&quot;Row = &quot; + row + &quot;  Col = &quot; + col + &quot;  sprite = &quot; + sprite);
+        }
+      }
+    }
+
+    // Draw the player
+<span class="nc" id="L118">    PImage playerSprite = playerConvert.get(null);</span>
+<span class="nc bnc" id="L119" title="All 2 branches missed.">    if (!mouthOpen) {</span>
+<span class="nc" id="L120">      playerSprite = playerConvert.get(player.curDir());</span>
+    }
+<span class="nc" id="L122">    drawSprite(playerSprite, player.curPos().x, player.curPos().y);</span>
+
+    // Draw the ghosts
+<span class="nc bnc" id="L125" title="All 2 branches missed.">    for (Ghost g : game.ghosts()) {</span>
+<span class="nc bnc" id="L126" title="All 2 branches missed.">      if (g.removed()) {</span>
+<span class="nc" id="L127">        continue;</span>
+      }
+      PImage ghostSprite;
+<span class="nc bnc" id="L130" title="All 2 branches missed.">      if (g.mode() == GhostMode.FRIGHTENED) {</span>
+<span class="nc" id="L131">        ghostSprite = frightened;</span>
+      } else {
+<span class="nc" id="L133">        ghostSprite = ghostConvert.get(g.type());</span>
+      }
+<span class="nc" id="L135">      drawSprite(ghostSprite, g.curPos().x, g.curPos().y);</span>
+<span class="nc bnc" id="L136" title="All 2 branches missed.">      if (debugMode) {</span>
+        // Draw a line from the ghost to its target cell.
+<span class="nc" id="L138">        stroke(255);   // Select white for the line colour</span>
+<span class="nc" id="L139">        GridCoord targetCoord = g.targetCoord();</span>
+        // Testing: GridCoord targetCoord = new GridCoord(player.curPos());
+<span class="nc" id="L141">        GridCoord ghostCoord = new GridCoord(g.curPos());</span>
+<span class="nc" id="L142">        line(screenCoord(ghostCoord.x), screenCoord(ghostCoord.y), screenCoord(targetCoord.x), screenCoord(targetCoord.y));</span>
+
+      }
+<span class="nc" id="L145">    }</span>
+
+    // Draw the lives
+<span class="nc" id="L148">    PImage lifeSprite = loadImage(&quot;playerRight.png&quot;);</span>
+<span class="nc bnc" id="L149" title="All 2 branches missed.">    for (int i = 0; i&lt;game.livesLeft(); i++) {</span>
+<span class="nc" id="L150">      drawSprite(lifeSprite, i * 2 + 1, grid.GRID_ROWS - 2);</span>
+    }
+<span class="nc" id="L152">  }</span>
+
+  public void keyPressed(KeyEvent event) {
+<span class="nc bnc" id="L155" title="All 2 branches missed.">    if (key == ' ') {</span>
+      //System.out.println(&quot;You hit space!&quot;);
+<span class="nc bnc" id="L157" title="All 2 branches missed.">      debugMode = !debugMode;</span>
+<span class="nc bnc" id="L158" title="All 4 branches missed.">    } else if (keyCode == UP || key == 'w') {</span>
+      //System.out.println(&quot;You hit Up!&quot;);
+<span class="nc" id="L160">      player.setNextDir(Dir.UP);</span>
+<span class="nc bnc" id="L161" title="All 4 branches missed.">    } else if (keyCode == DOWN || key == 's') {</span>
+      //System.out.println(&quot;You hit Down!&quot;);
+<span class="nc" id="L163">      player.setNextDir(Dir.DOWN);</span>
+<span class="nc bnc" id="L164" title="All 4 branches missed.">    } else if (keyCode == LEFT || key == 'a') {</span>
+      //System.out.println(&quot;You hit Left!&quot;);
+<span class="nc" id="L166">      player.setNextDir(Dir.LEFT);</span>
+<span class="nc bnc" id="L167" title="All 4 branches missed.">    } else if (keyCode == RIGHT || key == 'd') {</span>
+      //System.out.println(&quot;You hit Right!&quot;);
+<span class="nc" id="L169">      player.setNextDir(Dir.RIGHT);</span>
+<span class="nc bnc" id="L170" title="All 2 branches missed.">    } else if (key == 'q') {</span>
+      //System.out.println(&quot;You hit q!&quot;);
+<span class="nc" id="L172">      this.exit();</span>
+    }
+<span class="nc" id="L174">  }</span>
+
+  public static void main(String[] args) {
+<span class="nc" id="L177">    PApplet.main(&quot;ghost.App&quot;);</span>
+<span class="nc" id="L178">  }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

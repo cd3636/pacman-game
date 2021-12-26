@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Grid.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">a2</a> &gt; <a href="index.source.html" class="el_package">ghost</a> &gt; <span class="el_source">Grid.java</span></div><h1>Grid.java</h1><pre class="source lang-java linenums">package ghost;
+
+import java.util.Map;
+import java.util.HashMap;
+import java.util.List;
+import java.util.ArrayList;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+
+<span class="pc bpc" id="L11" title="1 of 2 branches missed.">public class Grid {</span>
+  public final static int GRID_ROWS = 36;
+  public final static int GRID_COLS = 28;
+
+  public static int fixRow(int row) {
+<span class="pc bpc" id="L16" title="1 of 2 branches missed.">    if (row &lt; 0) {</span>
+<span class="nc" id="L17">      return 0;</span>
+<span class="pc bpc" id="L18" title="1 of 2 branches missed.">    } else if (row &gt;= GRID_ROWS) {</span>
+<span class="nc" id="L19">      return GRID_ROWS - 1;</span>
+    } else {
+<span class="fc" id="L21">      return row;</span>
+    }
+  }
+  public static int fixCol(int col) {
+<span class="fc bfc" id="L25" title="All 2 branches covered.">    if (col &lt; 0) {</span>
+<span class="fc" id="L26">      return 0;</span>
+<span class="fc bfc" id="L27" title="All 2 branches covered.">    } else if (col &gt;= GRID_COLS) {</span>
+<span class="fc" id="L28">      return GRID_COLS - 1;</span>
+    } else {
+<span class="fc" id="L30">      return col;</span>
+    }
+  }
+
+<span class="fc" id="L34">  private Cell[][] cells = new Cell[GRID_COLS][GRID_ROWS];</span>
+<span class="fc" id="L35">  private boolean[][] eatenFruit = new boolean[GRID_COLS][GRID_ROWS];</span>
+<span class="fc" id="L36">  private Map&lt;Character,Cell&gt; cellConvert = new HashMap&lt;Character,Cell&gt;();</span>
+<span class="fc" id="L37">  private Map&lt;Character,GhostType&gt; ghostConvert = new HashMap&lt;Character,GhostType&gt;();</span>
+  private int fruitLeft;
+
+  public Cell cellAt(int x, int y) {
+<span class="fc bfc" id="L41" title="All 2 branches covered.">    if (eatenFruit[x][y]) {</span>
+<span class="fc" id="L42">      return Cell.AIR;</span>
+    }
+<span class="fc" id="L44">    return cells[x][y];</span>
+  }
+
+  public int fruitLeft() {
+<span class="fc" id="L48">    return fruitLeft;</span>
+  }
+
+  public void resetFruit() {
+<span class="fc" id="L52">    fruitLeft = 0;</span>
+<span class="fc bfc" id="L53" title="All 2 branches covered.">    for (int row = 0; row &lt; GRID_ROWS; row++) {</span>
+<span class="fc bfc" id="L54" title="All 2 branches covered.">      for (int col = 0; col &lt; GRID_COLS; col++) {</span>
+<span class="fc" id="L55">        Cell cell = cells[col][row];</span>
+<span class="fc bfc" id="L56" title="All 4 branches covered.">        if (cell == Cell.FRUIT || cell == Cell.SUPERFRUIT) {</span>
+<span class="fc" id="L57">          fruitLeft++;</span>
+        }
+<span class="fc" id="L59">        eatenFruit[col][row] = false;</span>
+      }
+    }
+<span class="fc" id="L62">  }</span>
+
+  public void eatFruit(int col, int row) {
+<span class="fc" id="L65">    eatenFruit[col][row] = true;</span>
+<span class="fc" id="L66">    fruitLeft--;</span>
+<span class="fc" id="L67">  }</span>
+
+  private MoverCoord playerHome;
+<span class="fc" id="L70">  private Map&lt;MoverCoord,GhostType&gt; ghostInfo = new HashMap&lt;MoverCoord,GhostType&gt;();</span>
+  public MoverCoord playerHome() {
+<span class="fc" id="L72">    return playerHome;</span>
+  }
+  public Map&lt;MoverCoord,GhostType&gt; ghostInfo() {
+<span class="fc" id="L75">    return ghostInfo;</span>
+  }
+
+  private void initialise(String[] mapRows) {
+<span class="fc" id="L79">    fruitLeft = 0;</span>
+<span class="fc" id="L80">    cellConvert.put('0', Cell.AIR);</span>
+<span class="fc" id="L81">    cellConvert.put('1', Cell.WALLHORIZONTAL);</span>
+<span class="fc" id="L82">    cellConvert.put('2', Cell.WALLVERTICAL);</span>
+<span class="fc" id="L83">    cellConvert.put('3', Cell.WALLUPLEFT);</span>
+<span class="fc" id="L84">    cellConvert.put('4', Cell.WALLUPRIGHT);</span>
+<span class="fc" id="L85">    cellConvert.put('5', Cell.WALLDOWNLEFT);</span>
+<span class="fc" id="L86">    cellConvert.put('6', Cell.WALLDOWNRIGHT);</span>
+<span class="fc" id="L87">    cellConvert.put('7', Cell.FRUIT);</span>
+<span class="fc" id="L88">    cellConvert.put('8', Cell.SUPERFRUIT);</span>
+
+<span class="fc" id="L90">    ghostConvert.put('a', GhostType.AMBUSHER);</span>
+<span class="fc" id="L91">    ghostConvert.put('c', GhostType.CHASER);</span>
+<span class="fc" id="L92">    ghostConvert.put('g', GhostType.CHASER);</span>
+<span class="fc" id="L93">    ghostConvert.put('i', GhostType.IGNORANT);</span>
+<span class="fc" id="L94">    ghostConvert.put('w', GhostType.WHIM);</span>
+
+<span class="pc bpc" id="L96" title="2 of 4 branches missed.">    assert(mapRows.length == GRID_ROWS);</span>
+<span class="fc bfc" id="L97" title="All 2 branches covered.">    for (int row = 0; row &lt; GRID_ROWS; row++) {</span>
+<span class="fc" id="L98">      String line = mapRows[row];</span>
+<span class="pc bpc" id="L99" title="2 of 4 branches missed.">      assert(line.length() == GRID_COLS);</span>
+<span class="fc bfc" id="L100" title="All 2 branches covered.">      for (int col = 0; col &lt; GRID_COLS; col++) {</span>
+<span class="fc" id="L101">        Cell cell = Cell.AIR;</span>
+<span class="fc" id="L102">        char ch = line.charAt(col);</span>
+<span class="fc bfc" id="L103" title="All 2 branches covered.">        if (ch == 'p') {</span>
+<span class="fc" id="L104">          cell = Cell.AIR;</span>
+<span class="fc" id="L105">          playerHome = new MoverCoord(col, row);</span>
+<span class="fc bfc" id="L106" title="All 2 branches covered.">        } else if (ghostConvert.containsKey(ch)) {</span>
+<span class="fc" id="L107">          cell = Cell.AIR;</span>
+<span class="fc" id="L108">          ghostInfo.put(new MoverCoord(col, row),ghostConvert.get(ch));</span>
+          // ghostTypes.add(GhostType.Classic);
+        } else {
+<span class="pc bpc" id="L111" title="1 of 4 branches missed.">          assert(cellConvert.containsKey(ch));</span>
+<span class="fc" id="L112">          cell = cellConvert.get(ch);</span>
+        }
+<span class="fc" id="L114">        cells[col][row] = cell;</span>
+      }
+    }
+<span class="fc" id="L117">    resetFruit();</span>
+<span class="fc" id="L118">  }</span>
+
+<span class="fc" id="L120">  public Grid(String mapFilename) {</span>
+<span class="fc" id="L121">    String[] mapRows = new String[GRID_ROWS];</span>
+<span class="fc" id="L122">    try (BufferedReader bufferedReader = new BufferedReader(new FileReader(mapFilename)))</span>
+    {
+<span class="fc bfc" id="L124" title="All 2 branches covered.">      for (int row = 0; row &lt; GRID_ROWS; row++) {</span>
+<span class="fc" id="L125">        String line = bufferedReader.readLine();</span>
+<span class="pc bpc" id="L126" title="2 of 4 branches missed.">        assert(line != null);</span>
+<span class="pc bpc" id="L127" title="2 of 4 branches missed.">        assert(line.length() == GRID_COLS);</span>
+<span class="fc" id="L128">        mapRows[row] = line;</span>
+      }
+<span class="pc bpc" id="L130" title="2 of 4 branches missed.">      assert(bufferedReader.readLine() == null);  // Make sure there are no more lines</span>
+    }
+<span class="nc" id="L132">    catch (IOException e) {</span>
+<span class="nc" id="L133">      e.printStackTrace();</span>
+<span class="fc" id="L134">    }</span>
+<span class="fc" id="L135">    initialise(mapRows);</span>
+<span class="fc" id="L136">  }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

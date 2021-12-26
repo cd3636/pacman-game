@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Dir.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">a2</a> &gt; <a href="index.source.html" class="el_package">ghost</a> &gt; <span class="el_source">Dir.java</span></div><h1>Dir.java</h1><pre class="source lang-java linenums">package ghost;
+
+<span class="fc" id="L3">public enum Dir {</span>
+<span class="fc" id="L4">  UP(0, -1, false),</span>
+<span class="fc" id="L5">  DOWN(0, 1, true),</span>
+<span class="fc" id="L6">  LEFT(-1, 0, false),</span>
+<span class="fc" id="L7">  RIGHT(1, 0, true);</span>
+
+  private int xD;
+  private int yD;
+  private boolean isPositive;
+
+<span class="fc" id="L13">  private Dir(int xD, int yD, boolean isPositive) {</span>
+<span class="fc" id="L14">    this.xD = xD;</span>
+<span class="fc" id="L15">    this.yD = yD;</span>
+<span class="fc" id="L16">    this.isPositive = isPositive;</span>
+<span class="fc" id="L17">  }</span>
+
+  public int xD() {
+<span class="fc" id="L20">    return this.xD;</span>
+  }
+
+  public int yD() {
+<span class="fc" id="L24">    return this.yD;</span>
+  }
+
+  public boolean isPositive() {
+<span class="nc" id="L28">    return this.isPositive;</span>
+  }
+
+  public Dir opposite() {
+<span class="pc bpc" id="L32" title="1 of 5 branches missed.">    switch (this) {</span>
+      case UP:
+<span class="fc" id="L34">        return DOWN;</span>
+      case DOWN:
+<span class="fc" id="L36">        return UP;</span>
+      case LEFT:
+<span class="fc" id="L38">        return RIGHT;</span>
+      case RIGHT:
+<span class="fc" id="L40">        return LEFT;</span>
+    }
+<span class="nc" id="L42">    return null;</span>
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

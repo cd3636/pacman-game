@@ -1,0 +1,10 @@
+{
+    "map": "src/test/resources/map-game.check.ghost.movement.win.txt",
+    "lives": 1,
+    "speed": 1,
+    "frightenedLength": 1,
+    "modeLengths": [
+        1,
+        1
+    ]
+}
